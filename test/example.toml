@@ -1,0 +1,15 @@
+[options]   # Comments are supported
+string_option = "a string"
+array_option = [1.0, -0.1E20]
+float_option = nan
+bool_option = false
+integer_option = 2
+
+# Another comment
+[[fruits]]
+type = "apple" # Here's yet another comment
+properties = {mass_g = 200.828, color = "red", in_stock = 1}
+
+[[fruits]]
+type="orange"
+properties = {mass_g = 156.2, color = "orange", in_stock = 3}
