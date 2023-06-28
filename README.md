@@ -1,6 +1,6 @@
 # TinyTOML
 
-A small TOML-parsing library for Fortran. I wrote this instead of using [TOML-f](https://github.com/toml-f/toml-f) because
+A small TOML-parsing library written in Modern Fortran. I wrote this instead of using [TOML-f](https://github.com/toml-f/toml-f) because
 I needed TOML parsing in my research code and on an HPC cluster and didn't want to take on a large external library.
 You should probably use that library instead of this one if you can.
 
