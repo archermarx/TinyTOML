@@ -13,6 +13,7 @@ module TinyTOML
     ! Nested tables (i.e. tab1.tab2)
     ! Dates and times
     ! Binary, Hexadecimal, and octal literals
+    ! Multi-line strings
     use, intrinsic:: iso_fortran_env, only : &
         stderr => error_unit, &
         stdin => input_unit, &
@@ -580,7 +581,7 @@ module TinyTOML
     ! Instructions for converting a node into a string
     recursive pure function stringify(node) result(str)
         class(toml_object), intent(in):: node
-        character(len = :), allocatable:: str
+        character(len = :), allocatable:: str, val_str
         character(len = 1):: left_bracket, right_bracket
         integer(i32):: i, nchildren
 
@@ -605,11 +606,14 @@ module TinyTOML
             end do
             str = str // right_bracket
         case default
+            val_str = node%value
+            if (node%type == "string") val_str = '"' // val_str // '"'
             if (node%key == "") then
-                str = node%value // "::" // node%type
+                str = val_str // "::" // node%type
             else
-                str = node%key // "::" // node%type // " = " // node%value
+                str = node%key // "::" // node%type // " = " // val_str
             endif
+
         end select
     end function
 
@@ -970,6 +974,7 @@ module TinyTOML
                 error_code = MISSING_CLOSING_DOUBLE_QUOTE
             else
                 typ = "string"
+                val = val(2:len(val)-1)
             endif
         ! Check if value is a single-quoted string
         elseif (val(1:1) == "'") then
@@ -977,6 +982,7 @@ module TinyTOML
                 error_code = MISSING_CLOSING_SINGLE_QUOTE
             else
                 typ = "string"
+                val = val(2:len(val)-1)
             endif
         ! Check if value is an array
         elseif (val(1:1) == "[") then
