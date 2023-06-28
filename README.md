@@ -14,8 +14,8 @@ Does not currently support all TOML features. Missing features include:
 
 ## Installation
 
-To install, just download the files from this repository and add the two
-source files to your fortran source directory. Compile using your build system of choice.
+To install, just download the files from this repository and add the source file to your Fortran project's
+source directory. Compile using your build system of choice.
 
 A sample Makefile is provided for building the example code. Clone the repository and run `make`.
 To run the example program, type
@@ -89,6 +89,12 @@ To dump the contents of a `toml_object` into a string, call the `stringify` func
 ```fortran
 print*, options%stringify()
 print*, stringify(options) ! this is equivalent
+```
+
+With the file above, this produces the following JSON-like output.
+
+```
+options: {string_option::string = "a string", array_option: [1.0::float, -0.1d20::float], float_option::float = nan, bool_option::bool = false, integer_option::int = 2}
 ```
 
 A more complete example of usage is available in the `test` directory.
