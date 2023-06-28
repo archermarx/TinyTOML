@@ -246,10 +246,10 @@ module TinyTOML
         end select
     end subroutine
 
-    subroutine read_value_string(str, node)
-        character(len = :), allocatable, intent(out):: str
+    pure subroutine read_value_string(str, node)
+        character(len = *), intent(out):: str
         type(toml_object), intent(in):: node
-        str = node%value
+        read(node%value, *) str
     end subroutine
 
     subroutine read_value_f32(float, node)
@@ -595,7 +595,8 @@ module TinyTOML
                     ! Check for blank line
                     if (len(key) == 0 .and. ind > 0) then
                         ! Don't bother recording multiple blank lines
-                        if (tokens(ind)%type == "blank") cycle
+                        ! Blank lines with comments don't count
+                        if (tokens(ind)%type == "blank" .or. comment_ind > 0) cycle
                         typ = "blank"
                     else
                         error_code = INVALID_ENTRY
