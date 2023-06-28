@@ -44,9 +44,6 @@ program test
             default = (/1.0_f64, 2.0_f64, 3.0_f64/)&
         )
 
-        call read_value(options%get("not_present_option", error = .false.), &
-            not_present_option)
-
         num_array_elements = size(array_option)
 
         print*, "String option:", string_option
