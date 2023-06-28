@@ -4,9 +4,7 @@ A small TOML-parsing library for Fortran. I wrote this instead of using [TOML-f]
 I needed TOML parsing in my research code and on an HPC cluster and didn't want to take on a large external library.
 You should probably use that library instead of this one if you can.
 
-Consists of only two files:
- - src/regex.f90: Regex parsing library by [perazz](https://github.com/perazz/fortran-regex)
- - src/toml.f90: Remaining TOML parsing utilities
+Consists of a single c. 1000 line file.
 
 Does not currently support all TOML features. Missing features include:
  - Nested arrays
@@ -97,6 +95,6 @@ A more complete example of usage is available in the `test` directory.
 
 ## Contribution
 
-Please feel free to open issues and pull requests to improve this repo.
+This library is a work-in-progress. Please feel free to open issues and pull requests to improve this repo.
 
 
