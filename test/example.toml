@@ -2,6 +2,7 @@
 string_option = "a string"
 array_option = [1.0, -0.1E20]
 float_option = nan
+# A comment won't break up tables
 bool_option = false
 integer_option = 2
 

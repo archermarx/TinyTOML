@@ -1,5 +1,5 @@
 module TinyTOML
-    ! TinyTOML v0.1.0
+    ! TinyTOML v0.2.0
     ! https://github.com/archermarx/TinyTOML
     ! Copyright 2023, Thomas A. Marks, licensed under the MIT license.
     ! The full text of this license can be found in LICENSE.md in the root directory of this repository.
@@ -30,7 +30,7 @@ module TinyTOML
     integer(i32), parameter:: ERROR_LENGTH = 64
 
     ! List of error messages
-    character(len = *), dimension(1), parameter:: ERROR_MESSAGES(16) = [character(len = ERROR_LENGTH):: &
+    character(len = *), dimension(1), parameter:: ERROR_MESSAGES(17) = [character(len = ERROR_LENGTH):: &
         "General error", &
         "No equals sign for key-value pair", &
         "No value provided for key", &
@@ -46,7 +46,8 @@ module TinyTOML
         "Missing closing double quote in string", &
         "Missing closing single quote in string", &
         "File not found", &
-        "Invalid read" &
+        "Invalid read", &
+        "Key not found" &
     ]
 
     ! List of corresponding error codes
@@ -68,6 +69,7 @@ module TinyTOML
         enumerator:: MISSING_CLOSING_SINGLE_QUOTE = 14
         enumerator:: FILE_NOT_FOUND = 15
         enumerator:: INVALID_READ = 16
+        enumerator:: KEY_NOT_FOUND = 17
     end enum
 
     type, abstract:: toml_abstract_object
@@ -210,14 +212,25 @@ module TinyTOML
     subroutine toml_error(message, code)
         character(len = *), intent(in):: message
         integer(i32), intent(in):: code
-        write(stderr, '(A)') "TOML ERROR: ", message
+        write(stderr, '(A)') "TOML ERROR: " //  message // "."
         call exit(code)
+    end subroutine
+
+    subroutine key_not_found_error(target_key, node, context)
+        character(len = *), intent(in):: target_key
+        type(toml_object), intent(in):: node
+        character(len = *), optional:: context
+        character(len = :), allocatable:: message
+        message = "Key '" // target_key // "' not found in object"
+        if (node%key /= "") message = message // " '" // node%key // "'"
+        if (present(context)) message = message // " " // context
+        call toml_error(message, KEY_NOT_FOUND)
     end subroutine
 
     subroutine invalid_read_error(type, node)
         character(len = *), intent(in):: type
-        type(toml_object):: node
-        call toml_error("Tried to read "//node%key//" of type "//node%type//" as a "// type //".", INVALID_READ)
+        type(toml_object), intent(in):: node
+        call toml_error("Tried to read '"//node%key//"' of type "//node%type//" as a "// type, INVALID_READ)
     end subroutine
 
     subroutine parse_error(error_code, line)
@@ -234,135 +247,200 @@ module TinyTOML
         num_children = size(node%children)
     end function
 
-    subroutine read_value_bool(bool, node)
-        logical, intent(out):: bool
+    logical function use_default(node, default_present)
         type(toml_object), intent(in):: node
+        logical, intent(in):: default_present
+
+        use_default = .false.
+        if (node%error_code == KEY_NOT_FOUND) then
+            if (default_present) then
+                use_default = .true.
+            else
+                call key_not_found_error(node%value, node, "and no default provided")
+            endif
+        endif
+    end function
+
+    subroutine read_value_bool(node, val, default)
+        logical, intent(out):: val
+        logical, intent(in), optional:: default
+        type(toml_object), intent(in):: node
+
+        if (use_default(node, present(default))) then
+            val = default; return
+        endif
+
         select case(node%type)
         case("bool")
-            if (node%value == "true") bool = .true.
-            if (node%value == "false") bool = .false.
+            if (node%value == "true") val = .true.
+            if (node%value == "false") val = .false.
         case default
             call invalid_read_error("boolean", node)
         end select
     end subroutine
 
-    pure subroutine read_value_string(str, node)
-        character(len = *), intent(out):: str
+    subroutine read_value_string(node, val, default)
+        character(len = :), allocatable, intent(out):: val
+        character(len = *), optional, intent(in):: default
         type(toml_object), intent(in):: node
-        read(node%value, *) str
+
+        if (use_default(node, present(default))) then
+            val = default; return
+        endif
+
+        val = node%value
     end subroutine
 
-    subroutine read_value_f32(float, node)
-        real(f32), intent(out):: float
+    subroutine read_value_f32(node, val, default)
+        real(f32), intent(out):: val
+        real(f32), intent(in), optional:: default
         type(toml_object), intent(in):: node
+
+        if (use_default(node, present(default))) then
+            val = default; return
+        endif
+
         select case(node%type)
         case("int", "float")
-            read(node%value, *) float
+            read(node%value, *) val
         case default
             call invalid_read_error("32-bit float", node)
         end select
     end subroutine
 
-    subroutine read_value_f64(float, node)
-        real(f64), intent(out):: float
+    subroutine read_value_f64(node, val, default)
+        real(f64), intent(out):: val
+        real(f64), intent(in), optional:: default
         type(toml_object), intent(in):: node
+
+        if (use_default(node, present(default))) then
+            val = default; return
+        endif
+
         select case(node%type)
         case("int", "float")
-            read(node%value, *) float
+            read(node%value, *) val
         case default
             call invalid_read_error("64-bit float", node)
         end select
     end subroutine
 
-    subroutine read_value_i32(int, node)
-        integer(i32), intent(out):: int
+    subroutine read_value_i32(node, val, default)
+        integer(i32), intent(out):: val
+        integer(i32), intent(in), optional:: default
         type(toml_object), intent(in):: node
+
+        if (use_default(node, present(default))) then
+            val = default; return
+        endif
+
         select case(node%type)
         case("int")
-            read(node%value, *) int
+            read(node%value, *) val
         case default
             call invalid_read_error("32-bit integer", node)
         end select
     end subroutine
 
-    subroutine read_value_i64(int, node)
-        integer(i64), intent(out):: int
+    subroutine read_value_i64(node, val, default)
+        integer(i64), intent(out):: val
+        integer(i64), intent(in), optional:: default
         type(toml_object), intent(in):: node
+
+        if (use_default(node, present(default))) then
+            val = default; return
+        endif
+
         select case(node%type)
         case("int")
-            read(node%value, *) int
+            read(node%value, *) val
         case default
             call invalid_read_error("64-bit integer", node)
         end select
     end subroutine
 
-    subroutine read_array_bool(arr, node)
-        logical, allocatable, intent(out):: arr(:)
+    subroutine read_array_bool(node, val, default)
+        logical, allocatable, intent(out):: val(:)
+        logical, optional, intent(in):: default(:)
         type(toml_object):: node
         integer(i32):: i, n
 
+        if (use_default(node, present(default))) then
+            val = default; return
+        endif
         n = num_children(node)
 
-        if (allocated(arr)) deallocate(arr)
-        allocate(arr(n))
+        allocate(val(n))
         do i = 1, n
-            call read_value(arr(i), node%get(i))
+            call read_value(node%get(i), val(i))
         end do
     end subroutine
 
-    subroutine read_array_i32(arr, node)
-        integer(i32), allocatable, intent(out):: arr(:)
+    subroutine read_array_i32(node, val, default)
+        integer(i32), allocatable, intent(out):: val(:)
+        integer(i32), optional, intent(in):: default(:)
         type(toml_object):: node
         integer(i32):: i, n
 
+        if (use_default(node, present(default))) then
+            val = default; return
+        endif
         n = num_children(node)
 
-        if (allocated(arr)) deallocate(arr)
-        allocate(arr(n))
+        allocate(val(n))
         do i = 1, n
-            call read_value(arr(i), node%get(i))
+            call read_value(node%get(i), val(i))
         end do
     end subroutine
 
-    subroutine read_array_i64(arr, node)
-        integer(i64), allocatable, intent(out):: arr(:)
+    subroutine read_array_i64(node, val, default)
+        integer(i64), allocatable, intent(out):: val(:)
+        integer(i64), optional, intent(in):: default(:)
         type(toml_object):: node
         integer(i32):: i, n
 
+        if (use_default(node, present(default))) then
+            val = default; return
+        endif
         n = num_children(node)
 
-        if (allocated(arr)) deallocate(arr)
-        allocate(arr(n))
+        allocate(val(n))
         do i = 1, n
-            call read_value(arr(i), node%get(i))
+            call read_value(node%get(i), val(i))
         end do
     end subroutine
 
-    subroutine read_array_f32(arr, node)
-        real(f32), allocatable, intent(out):: arr(:)
+    subroutine read_array_f32(node, val, default)
+        real(f32), allocatable, intent(out):: val(:)
+        real(f32), optional, intent(in):: default(:)
         type(toml_object):: node
         integer(i32):: i, n
 
+        if (use_default(node, present(default))) then
+            val = default; return
+        endif
         n = num_children(node)
 
-        if (allocated(arr)) deallocate(arr)
-        allocate(arr(n))
+        allocate(val(n))
         do i = 1, n
-            call read_value(arr(i), node%get(i))
+            call read_value(node%get(i), val(i))
         end do
     end subroutine
 
-    subroutine read_array_f64(arr, node)
-        real(f64), allocatable, intent(out):: arr(:)
+    subroutine read_array_f64(node, val, default)
+        real(f64), allocatable, intent(out):: val(:)
+        real(f64), optional, intent(in):: default(:)
         type(toml_object):: node
         integer(i32):: i, n
 
+        if (use_default(node, present(default))) then
+            val = default; return
+        endif
         n = num_children(node)
 
-        if (allocated(arr)) deallocate(arr)
-        allocate(arr(n))
+        allocate(val(n))
         do i = 1, n
-            call read_value(arr(i), node%get(i))
+            call read_value(node%get(i), val(i))
         end do
     end subroutine
 
@@ -438,12 +516,20 @@ module TinyTOML
         endif
     end function
 
-    recursive function get_key(node, key) result(gotten)
+    recursive function get_key(node, key, error) result(gotten)
         class(toml_object), intent(in):: node
         character(len = *), intent(in):: key
         character(len = :), allocatable:: subkey, remainder
         integer(i32):: index, first_dot_index
         type(toml_object):: gotten
+        logical, optional:: error
+        logical:: throw_error
+
+        if (present(error)) then
+            throw_error = error
+        else
+            throw_error = .true.
+        endif
 
         ! Check for subkeys
         do first_dot_index = 1, len(key)
@@ -459,16 +545,14 @@ module TinyTOML
 
         index = find_key(node%children, subkey)
 
-        if (index == 0) then
-            if (node%key == "") then
-                write(stderr, *) "ERROR: Key " // subkey // " not found in object."
-            else
-                write(stderr, *) "ERROR: Key " // subkey // " not found in object " // node%key // "."
-            endif
-            call exit(1)
-        endif
+        if (index == 0 .and. throw_error) call key_not_found_error(subkey, node)
 
         gotten = node%get(index)
+
+        if (gotten%error_code == KEY_NOT_FOUND) then
+            gotten%key = node%key
+            gotten%value = subkey
+        endif
 
         if (remainder /= "") then
             gotten = gotten%get(strip(remainder))
@@ -480,9 +564,17 @@ module TinyTOML
         integer, intent(in):: index
         type(toml_object):: gotten
 
-        select type (found => node%children(index))
-            type is (toml_object); gotten = found
-        end select
+        if (index <= 0 .or. index > num_children(node)) then
+            gotten%key = ""
+            gotten%value = ""
+            gotten%type = ""
+            gotten%error_code = KEY_NOT_FOUND
+            gotten%children = no_children()
+        else
+            select type (found => node%children(index))
+                type is (toml_object); gotten = found
+            end select
+        endif
     end function
 
     ! Instructions for converting a node into a string

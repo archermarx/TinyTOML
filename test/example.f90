@@ -26,18 +26,26 @@ program test
         type(toml_object):: options, fruits, fruit, properties
         character(len = :), allocatable:: string_option, fruit_name, fruit_color
         integer(i32):: num_array_elements, in_stock
-        real(f64), allocatable:: array_option(:)
+        real(f64), allocatable:: array_option(:), not_present_option(:)
         real(f64):: float_option, mass_g
         integer(i32):: integer_option
         logical:: bool_option
 
         options = input%get("options")
 
-        call read_value(string_option, options%get("string_option"))
-        call read_value(float_option, options%get("float_option"))
-        call read_value(integer_option, options%get("integer_option"))
-        call read_value(array_option, options%get("array_option"))
-        call read_value(bool_option, options%get("bool_option"))
+        call read_value(options%get("string_option", error = .false.), string_option)
+        call read_value(options%get("float_option", error = .false.), float_option)
+        call read_value(options%get("integer_option", error = .false.), integer_option)
+        call read_value(options%get("array_option", error = .false.), array_option)
+        call read_value(options%get("bool_option", error = .false.), bool_option)
+        call read_value(&
+            options%get("not_present_option", error = .false.), &
+            not_present_option, &
+            default = (/1.0_f64, 2.0_f64, 3.0_f64/)&
+        )
+
+        call read_value(options%get("not_present_option", error = .false.), &
+            not_present_option)
 
         num_array_elements = size(array_option)
 
@@ -47,15 +55,16 @@ program test
         print*, "Length of array: ", num_array_elements
         print*, "Array option: ", array_option
         print*, "Bool option: ", bool_option
+        print*, "Not present option: ", not_present_option
 
         fruits = input%get("fruits")
         do i = 1, num_children(fruits)
             fruit = get(input%get("fruits"), i)
             properties = fruit%get("properties")
-            call read_value(fruit_name, fruit%get("type"))
-            call read_value(in_stock, properties%get("in_stock"))
-            call read_value(fruit_color, properties%get("color"))
-            call read_value(mass_g, properties%get("mass_g"))
+            call read_value(fruit%get("type"), fruit_name)
+            call read_value(properties%get("in_stock"), in_stock)
+            call read_value(properties%get("color"), fruit_color)
+            call read_value(properties%get("mass_g"), mass_g)
             print*, ""
             print*, "Fruit: ", i
             print*, "Name: ", fruit_name

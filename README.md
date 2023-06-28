@@ -80,8 +80,16 @@ you are expected to pass an `allocatable` variable.
 real(f64):: float_option
 real(f64), allocatable:: array_option(:)
 
-call read_value(float_option, options%get("float_option"))
-call read_value(array_option, options%get("array_option"))
+call read_value(options%get("float_option"), float_option)
+call read_value(options%get("array_option"), array_option)
+```
+
+If you want to try to read an option from the TOML file but assign a default value if the target key isn't found, you can use
+the following pattern. Passing `error = .false.` to the `get` method suppresses the throwing of an error and instead returns
+a `toml_object` with a `KEY_NOT_FOUND` error code (error code 15).
+
+```fortran
+call read_value(option%get("nonexistent_option", error = .false.), float_option, default = 2.0_f64)
 ```
 
 To dump the contents of a `toml_object` into a string, call the `stringify` function, i.e.
