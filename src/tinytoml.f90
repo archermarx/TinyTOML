@@ -1,6 +1,7 @@
 module TinyTOML
     ! TinyTOML v0.1.0
-    ! Copyright 2023, licensed under the MIT license.
+    ! https://github.com/archermarx/TinyTOML
+    ! Copyright 2023, Thomas A. Marks, licensed under the MIT license.
     ! The full text of this license can be found in LICENSE.md in the root directory of this repository.
     ! This repository provides utilities for parsing TOML files for input reading
     ! When possible, try upgrading to TOML-f
