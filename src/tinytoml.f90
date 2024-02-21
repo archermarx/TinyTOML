@@ -670,12 +670,12 @@ module TinyTOML
             if (comment_ind == 0) then
                 ! Line has no comma. Just trim whitespace from line
                 line = strip(ln)
-            elseif (comment_ind == 1) then
-                ! Line starts with a comma. The entire line is thus a comma and can be skipped
-                cycle
             else
                 line = strip(ln(1:comment_ind-1))
             endif
+
+            ! strip all blank lines
+            if (len(line) == 0) cycle
 
             ! Try parsing as key-value pair
             pair = parse_key_value_pair(line)
@@ -784,10 +784,12 @@ module TinyTOML
                 node%type = tokens(i)%type
                 node%value = ""
                 n_children = 0
+
                 do
-                    ! Blank lines separate tables
-                    if (tokens(i + n_children)%type == "blank") exit
-                    if (i + n_children == num_tokens) exit
+                    ! tables terminate at EOF of at the beginning of another table
+                    if (i + n_children + 1 > num_tokens) exit
+                    if (tokens(i + n_children + 1)%type == "table" .or. tokens(i + n_children + 1)%type == "tablearray") exit
+                    ! Increment the child we're on
                     n_children = n_children + 1
                 end do
                 ! Recursively parse tokens of this table

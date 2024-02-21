@@ -23,12 +23,12 @@ program test
     end do
 
     block
-        type(toml_object):: options, fruits, fruit, properties
+        type(toml_object):: options, more_options, fruits, fruit, properties
         character(len = :), allocatable:: string_option, fruit_name, fruit_color
         integer(i32):: num_array_elements, in_stock
         real(f64), allocatable:: array_option(:), not_present_option(:)
         real(f64):: float_option, mass_g
-        integer(i32):: integer_option
+        integer(i32):: integer_option, another_option
         logical:: bool_option
 
         options = input%get("options")
@@ -44,6 +44,9 @@ program test
             default = (/1.0_f64, 2.0_f64, 3.0_f64/)&
         )
 
+        more_options = input%get("more-options")
+        call read_value(more_options%get("another_option"), another_option)
+
         num_array_elements = size(array_option)
 
         print*, "String option:", string_option
@@ -53,6 +56,8 @@ program test
         print*, "Array option: ", array_option
         print*, "Bool option: ", bool_option
         print*, "Not present option: ", not_present_option
+
+        print*, "Another option: ", another_option
 
         fruits = input%get("fruits")
         do i = 1, num_children(fruits)

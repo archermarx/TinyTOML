@@ -7,6 +7,8 @@ float_option = nan
 # A comment won't break up tables
 bool_option = false
 integer_option = 2
+[more-options]
+another_option=2
 
 # Another comment
 [[fruits]]
@@ -16,3 +18,11 @@ properties = {mass_g = 200.828, color = "red", in_stock = 1}
 [[fruits]]
 type="orange"
 properties = {mass_g = 156.2, color = "orange", in_stock = 3}
+# no whitespace between tables this time, but we will put whitespace between fields
+[[fruits]]
+type="banana"
+
+properties = {mass_g = 90.0, color = "yellow", in_stock = 5}
+[[fruits]]
+type="pomelo"
+properties = {mass_g = 150.0, color = "yellow", in_stock = -1}
