@@ -238,7 +238,7 @@ module TinyTOML
         integer(i32), intent(in):: error_code, line
         character(len = 256):: line_str
         write(line_str, '(g0)') line
-        call toml_error(strip(ERROR_MESSAGES(error_code)) // "(line " // strip(line_str) // ")", error_code)
+        call toml_error(strip(ERROR_MESSAGES(error_code)) // " (line " // strip(line_str) // ")", error_code)
     end subroutine
 !=================End error-handling routines=================================
 
@@ -668,7 +668,11 @@ module TinyTOML
             ! Find first occurance of a pound sign (comment) in the line
             comment_ind = findfirst("#", ln)
             if (comment_ind == 0) then
+                ! Line has no comma. Just trim whitespace from line
                 line = strip(ln)
+            elseif (comment_ind == 1) then
+                ! Line starts with a comma. The entire line is thus a comma and can be skipped
+                cycle
             else
                 line = strip(ln(1:comment_ind-1))
             endif
@@ -848,7 +852,6 @@ module TinyTOML
         endif
 
         split_str = split(str, ",")
-        !print*, split_str
         num_pairs = size(split_str)
         ! Ignore trailing commas
         if (strip(split_str(num_pairs)) == "") then
@@ -858,7 +861,6 @@ module TinyTOML
         allocate(pairs(num_pairs))
 
         do i = 1, num_pairs
-            !print*, strip(split_str(i))
             result = parse_key_value_pair(strip(split_str(i)))
             if (result%error_code == SUCCESS) then
                 pairs(i) = result
@@ -1091,9 +1093,9 @@ module TinyTOML
         integer(i32):: num_elements, i
 
         array_content = str(2:len(str)-1)
-        num_elements = count(array_content, ",") + 1
         array_elements = split(array_content, ",")
 
+        num_elements = count(array_content, ",") + 1
         allocate(nodes(num_elements))
 
         do i = 1, num_elements

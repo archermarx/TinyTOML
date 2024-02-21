@@ -1,3 +1,5 @@
+# a comment to start things off
+# and a second comment
 [options]   # Comments are supported
 string_option = "a string"
 array_option = [1.0, -0.1E20]
