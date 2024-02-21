@@ -678,7 +678,7 @@ module TinyTOML
             if (len(line) == 0) cycle
 
             ! Try parsing as key-value pair
-            pair = parse_key_value_pair(line)
+            pair = parse_key_value_pair(line, i)
             error_code = pair%error_code
 
             if (error_code == SUCCESS) then
@@ -876,11 +876,17 @@ module TinyTOML
     function parse_key_value_pair(str, line_num) result(pair)
         character(len = *), intent(in):: str
         integer(i32), intent(in), optional:: line_num
-        integer(i32):: equals_ind
+        integer(i32):: equals_ind, line_number
 
         character(len = :), allocatable:: key, val
         type(toml_object):: pair
         type(toml_object):: parse_result
+
+        if (present(line_num)) then
+            line_number = line_num
+        else
+            line_number = -1
+        endif
 
         ! Find first occurance of an equals sign in the line
         equals_ind = findfirst("=", str)
@@ -903,13 +909,7 @@ module TinyTOML
         pair%type = parse_result%type
         pair%key = key
         pair%value = parse_result%value
-
-        if (present(line_num)) then
-            pair%line_num = line_num
-        else
-            pair%line_num = -1
-        endif
-
+        pair%line_num = line_number
     end function
 
     pure function clean_number(str) result(num)
@@ -1092,16 +1092,19 @@ module TinyTOML
         type(toml_object):: result
         character(len = :), allocatable:: array_content, element
         character(len = :), allocatable, dimension(1):: array_elements(:)
-        integer(i32):: num_elements, i
+        integer(i32):: num_elements_expected, num_elements_found, i
 
         array_content = str(2:len(str)-1)
         array_elements = split(array_content, ",")
+        num_elements_expected = count(array_content, ",") + 1
+        num_elements_found = 0
+        allocate(nodes(num_elements_expected))
 
-        num_elements = count(array_content, ",") + 1
-        allocate(nodes(num_elements))
-
-        do i = 1, num_elements
+        do i = 1, num_elements_expected
             element = strip(array_elements(i))
+            ! if last element is blank, then we just have a trailing comma
+            if (len(element) == 0 .and. i == num_elements_expected) exit
+            num_elements_found = num_elements_found + 1
             result = parse_value(element)
             if (result%error_code == SUCCESS) then
                 child%key = ""
@@ -1113,7 +1116,7 @@ module TinyTOML
                 call parse_error(result%error_code, line_num)
             endif
         end do
-
+        nodes = nodes(1:num_elements_found)
     end function
 !=================End parsing routines=========================================
 end module

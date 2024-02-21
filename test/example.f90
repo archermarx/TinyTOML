@@ -76,4 +76,14 @@ program test
         end do
 
     end block
+
+    block
+        type(toml_object):: arrays
+        integer(i32), allocatable:: arr1(:)
+        arrays = input%get("complex-arrays")
+        print*, " "
+        do i = 1, num_children(arrays)
+            print*, stringify(arrays%get(i))
+        end do
+    end block
 end program

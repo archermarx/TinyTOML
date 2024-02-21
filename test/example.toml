@@ -26,3 +26,8 @@ properties = {mass_g = 90.0, color = "yellow", in_stock = 5}
 [[fruits]]
 type="pomelo"
 properties = {mass_g = 150.0, color = "yellow", in_stock = -1}
+
+[complex-arrays]
+arr1 = [1,2,3,] # trailing commas
+arr2 = []   # empty array
+arr3 = ["ball", "red", "element",]
