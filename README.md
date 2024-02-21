@@ -8,6 +8,8 @@ Consists of a single c. 1000 line file.
 
 Does not currently support all TOML features. Missing features include:
  - Nested arrays
+ - Arrays that span mutliple lines
+ - Arrays of inline tables
  - Nested tables (i.e. [tab1.tab2])
  - Dates and times
  - Binary, Hexadecimal, and octal literals
@@ -110,5 +112,3 @@ A more complete example of usage is available in the `test` directory.
 ## Contribution
 
 This library is a work-in-progress. Please feel free to open issues and pull requests to improve this repo.
-
-
