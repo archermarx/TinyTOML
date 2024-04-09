@@ -936,11 +936,21 @@ module TinyTOML
         type(toml_object):: parse_result
         character(len = :), allocatable:: typ, val
         integer(i32):: error_code
+        logical :: isnumber
 
         val = strip(value)
 
         typ = "unknown"
         error_code = SUCCESS
+
+        !check if value starts with integer part
+        !extra if statement needed to handle single length integers 
+        isnumber = .false.
+        if ((len(val) >= 2) .and. (val(1:1) == "+" .or. val(1:1) == "-")) then !check for signs
+            isnumber = isdigit(val(2:2))
+        else  
+            isnumber = isdigit(val(1:1)) 
+        endif
 
         ! Check if value is a bool
         if (val == "") then
@@ -954,9 +964,7 @@ module TinyTOML
             val = clean_number(val)
 
         ! Check if value starts with an integer part
-        elseif (&
-            (len(val) >= 2 .and. (val(1:1) == "+" .or. val(1:1) == "-") .and. isdigit(val(2:2))) .or. &
-            (len(val) >= 1 .and. isdigit(val(1:1)))) then
+        elseif(isnumber) then
 
             parse_result = parse_number(val)
             typ = parse_result%type
